@@ -1,0 +1,259 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            processingcanvas.focus();
+
+            if (localStorage.getItem("highscore") == null) {
+                localStorage.highscore = 0;
+            } else {
+
+            }
+        });
+    </script>
+
+    <script src="processing-1.4.1.min.js"></script>
+    <script type="text/processing" data-processing-target="processingcanvas">
+
+        int numberBalls = 800;
+        Ball[] balls = new Ball[numberBalls];
+        int ttl = 100;
+        int maxSpeed = 0;
+
+        void setup(){
+
+          size(window.innerWidth,window.innerHeight);
+          background(0);
+          noStroke();
+          float x = 100 + random()*(width-100);
+          float y = height-10;
+          for(int i = 0; i < numberBalls; i++){
+            Ball b = new Ball();
+            balls[i] = b;
+          }
+        }
+        
+        void draw(){
+          fill(0,50);
+          rect(0,0,width,height);
+          /*ttl -=1
+          if(ttl < 0){
+            ttl = random()*150+50;
+            Reset();
+          } else {
+            ttl -= 1;
+          }*/
+
+          for(int i = 0; i < numberBalls; i++){
+            balls[i].update();
+            if(balls[i].vx > maxSpeed){
+              maxSpeed = balls[i].vx;
+            }
+          }
+          if(maxSpeed < 0.5){
+            Reset();
+          }
+          //println(frameRate);
+          //checkIfReset();
+          checkWallCollision();
+          checkBallCollision();
+          maxSpeed = 0;
+        }
+
+        void checkBallCollision(){
+          for(int i = 0; i < numberBalls; i++){
+            for(int j = i+1; j < numberBalls; j++){
+              int distX = balls[j].x - balls[i].x;
+              int distY = balls[j].y - balls[i].y;
+              int dist = sqrt(distX * distX + distY * distY);
+              if(dist < balls[i].ballRadius + balls[j].ballRadius){
+                float normalX = distX / dist;
+                float normalY = distY / dist;
+                float midpointX = (balls[i].x + balls[j].x)/2;
+                float midpointY = (balls[i].y + balls[j].y)/2;
+                balls[i].x = midpointX - (balls[i].ballRadius+1)*normalX;
+                balls[i].y = midpointY - (balls[i].ballRadius+1)*normalY;
+                balls[j].x = midpointX + (balls[j].ballRadius+1)*normalX;
+                balls[j].y = midpointY + (balls[j].ballRadius+1)*normalY;
+
+                float dVector = (balls[i].vx - balls[j].vx) * normalX;
+                dVector += (balls[i].vy - balls[j].vy) * normalY;
+                float dvx = dVector * normalX;
+                float dvy = dVector * normalY;
+                balls[i].vx -= dvx;
+                balls[i].vy -= dvy;
+                balls[j].vx += dvx;
+                balls[j].vy += dvy;
+
+              }
+            }
+          }
+        }
+
+        void checkWallCollision(){
+          for(int i = 0; i < numberBalls; i++){
+             
+            if(balls[i].x < 0 + balls[i].ballRadius){
+              balls[i].x = 0 + balls[i].ballRadius*2;   
+              balls[i].vx *= -0.8;
+              balls[i].vy *= 0.8;
+            }
+            
+            if(balls[i].x > width - balls[i].ballRadius){
+              balls[i].x = width - balls[i].ballRadius*2;  
+              balls[i].vx *= -0.8;
+              balls[i].vy *= 0.8;
+            }
+           
+            if(balls[i].y < 0 + balls[i].ballRadius){
+              balls[i].y = 0 + balls[i].ballRadius*2;    
+              balls[i].vy *= -0.5;
+              balls[i].vy -= 1;
+              balls[i].vx *= 0.8;            
+            }
+            
+            if(balls[i].y > height - balls[i].ballRadius){
+              balls[i].y = height - balls[i].ballRadius*2;  
+              balls[i].vy *= -0.5;
+              balls[i].vy += 1;
+              balls[i].vx *= 0.8;
+            }  
+          }
+        }
+
+        void Reset(){
+          for(int i = 0; i < numberBalls; i++){
+            float y = 10 + random()*(height-20);
+            float x = 10 + random()*(width-20);
+            balls[i].x = x;
+            balls[i].y = y;
+            balls[i].vx = 0;
+            balls[i].vy = 0;
+            if(balls[i].x < width / 2){
+              balls[i].vx = random()*(20)+10;
+            }  else {
+              balls[i].vx = random()*(-20)-10;
+            }
+            
+            balls[i].vy = random(30)-15;
+        
+          }
+        }
+
+        void keyPressed(){
+          if(keyCode == UP){
+            Reset();
+          }
+        }
+
+        class Ball{
+          int x = 0;
+          int y = 0;
+          float vx = 0;
+          float vy = 0;
+          float v = 0;
+          int ballRadius = 4;
+          int gravX = 0;
+          int gravY = 1;
+          int colorState = 0;//(int)(random()*3)+1;
+          color c1 = color(255,0,0);
+          color c2 = color(0,255,0);
+          color c3 = color(0,0,255);
+          color c4 = color(255,255,0);
+          color c5 = color(255,0,255);
+          color c6 = color(0,255,255);
+        
+          int colorG = 0;
+          int colorB = 85;
+          int colorR = 170;
+
+          Ball(int _x, int _y, int _vx, int _vy){
+            x = _x;
+            y = _y;
+            vx = _vx;
+            vy = _vy;
+          }
+
+          void update(){
+            gravY = cos(millis()/1000);
+            //colorState = (int)((millis()/500)%6+1);
+            x += vx;
+            y += vy;
+            vy += gravY/2;
+            vx += gravX;
+            vy *= 0.99;
+            vx *= 0.99;
+            colorR += 2;
+            colorG += 1;
+            colorB += 1;
+
+            if(colorR > 255){
+            colorR = -255;
+            }
+            if(colorG > 255){
+            colorG = -255;
+            }
+            if(colorB > 255){
+            colorB = -255;
+            }
+            fill(abs(colorR),abs(colorG),abs(colorB));
+            switch(colorState){
+                case 1:
+                fill(c1);
+                break;
+
+                case 2:
+                fill(c2);
+                break;
+
+                case 3:
+                fill(c3);
+                break;
+
+                case 4:
+                fill(c4);
+                break;
+
+                case 5:
+                fill(c5);
+                break;
+
+                case 6:
+                fill(c6);
+                break;
+        }
+            ellipse(x,y,ballRadius*2,ballRadius*2);
+          }
+          }
+        
+
+    </script>
+    <style>
+        #outer {
+            width: 100%;
+            height: 100%;
+            background-color: white;
+        }
+
+        #processingcanvas {
+            outline: none;
+        }
+
+        body {
+            background-color: white;
+            margin: 0px;
+            overflow-y: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div id="outer">
+        <canvas id="processingcanvas" tabindex="1"></canvas>
+    </div>
+</body>
+</html>
